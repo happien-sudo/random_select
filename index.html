@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>교실 랜덤 학생 뽑기 🎯</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- 축하 폭죽 캔버스 -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="app-container">
+    <!-- 상단 헤더 바 -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo-icon">🎯</div>
+        <div class="title-wrap">
+          <h1>교실 랜덤 학생 뽑기</h1>
+          <p class="subtitle">공정하고 신나는 우리 반 무작위 추첨</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="soundToggleBtn" class="btn btn-icon" title="효과음 켜기/끄기">
+          <span id="soundIcon">🔊</span>
+          <span class="btn-text">소리 켬</span>
+        </button>
+        <button id="fullscreenBtn" class="btn btn-icon" title="전체화면 전환">
+          <span id="fullscreenIcon">⛶</span>
+          <span class="btn-text">전체화면</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 메인 콘텐츠 (좌측: 명단 관리 / 우측: 뽑기 스테이션) -->
+    <main class="main-content">
+      <!-- 좌측 패널: 학생 명단 작성 및 대기 명단 -->
+      <section class="panel panel-left" aria-label="학생 명단 관리">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2 class="panel-title">📝 학생 명단</h2>
+            <span id="waitingCountBadge" class="badge badge-primary">대기: 0명</span>
+          </div>
+          <div class="view-toggle-btns">
+            <button id="editModeBtn" class="btn btn-sm btn-ghost active">✏️ 명단 편집</button>
+            <button id="listModeBtn" class="btn btn-sm btn-ghost">📋 남은 명단</button>
+          </div>
+        </div>
+
+        <!-- 1) 명단 텍스트 편집 뷰 -->
+        <div id="editView" class="tab-view active">
+          <label for="nameInputArea" class="input-desc">
+            학생 이름을 <strong>줄바꿈(엔터)</strong> 또는 <strong>쉼표(,)</strong>로 입력하세요:
+          </label>
+          <textarea 
+            id="nameInputArea" 
+            class="name-textarea" 
+            placeholder="예시:&#10;1번 김민수&#10;2번 이서윤&#10;3번 박도윤&#10;4번 최지우&#10;5번 정하은"
+            rows="10"
+            spellcheck="false"
+          ></textarea>
+          <div class="editor-btn-group">
+            <button id="applyNamesBtn" class="btn btn-primary btn-block">
+              <span>✅</span> 명단 적용하기
+            </button>
+            <div class="sub-btn-group">
+              <button id="sampleNamesBtn" class="btn btn-secondary btn-sm" title="예시 학생 20명 불러오기">
+                💡 예시 명단
+              </button>
+              <button id="clearNamesBtn" class="btn btn-outline-danger btn-sm" title="입력창 비우기">
+                🗑️ 비우기
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2) 현재 남은 학생 칩 목록 뷰 -->
+        <div id="listView" class="tab-view">
+          <div class="list-control-bar">
+            <span class="desc-text">추첨 시 뽑힌 학생은 여기서 사라집니다.</span>
+            <button id="shuffleBtn" class="btn btn-sm btn-ghost" title="남은 학생 순서 섞기">
+              🔀 순서 섞기
+            </button>
+          </div>
+          <div id="studentChipContainer" class="student-chips-wrapper">
+            <!-- 자바스크립트로 칩 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 명단 정보 요약 푸터 -->
+        <div class="panel-footer-info">
+          <span>전체 등록: <strong id="totalCountText">0</strong>명</span>
+          <span>•</span>
+          <span>남은 인원: <strong id="remainingCountText" class="text-primary">0</strong>명</span>
+        </div>
+      </section>
+
+      <!-- 우측 패널: 랜덤 뽑기 스테이션 -->
+      <section class="panel panel-right" aria-label="랜덤 추첨 무대">
+        <div class="draw-stage">
+          <!-- 상단 뱃지/상태 -->
+          <div class="stage-status-wrap">
+            <span id="stageStatusBadge" class="badge badge-soft">준비 완료</span>
+          </div>
+
+          <!-- 메인 디스플레이 박스 -->
+          <div class="display-box-outer">
+            <div id="displayBox" class="display-box">
+              <div id="rollerNames" class="roller-content">
+                <span class="placeholder-text">🎲 아래 '뽑기' 버튼을 눌러주세요!</span>
+              </div>
+            </div>
+            <!-- 박스 주변 반짝임 효과 장식 -->
+            <div class="glow-effect"></div>
+          </div>
+
+          <!-- 추첨 축하 멘트 영역 -->
+          <div id="winnerAnnouncement" class="winner-announcement">
+            <span class="winner-crown">🎉 당첨을 축하합니다! 🎉</span>
+          </div>
+
+          <!-- 뽑기 조작 컨트롤 -->
+          <div class="draw-controls">
+            <button id="drawBtn" class="btn btn-draw" title="스페이스바로도 실행 가능합니다">
+              <span class="btn-draw-icon">🎲</span>
+              <span class="btn-draw-text">랜덤 뽑기!</span>
+              <span class="btn-draw-hint">[Space]</span>
+            </button>
+            
+            <div class="quick-options">
+              <label class="toggle-switch">
+                <input type="checkbox" id="fastModeCheckbox">
+                <span class="slider"></span>
+              </label>
+              <span class="quick-label">⚡ 빠른 뽑기 (애니메이션 단축)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 하단 영역: 뽑힌 순서 결과 히스토리 -->
+    <footer class="history-section" aria-label="뽑힌 결과 목록">
+      <div class="history-header">
+        <div class="history-title-group">
+          <h3 class="history-title">🏆 뽑힌 순서 (결과 기록)</h3>
+          <span id="pickedCountBadge" class="badge badge-success">0명 뽑힘</span>
+        </div>
+        <div class="history-action-btns">
+          <button id="copyResultBtn" class="btn btn-sm btn-ghost" title="클립보드에 결과 복사">
+            📋 순서 복사
+          </button>
+          <button id="resetOnlyPickedBtn" class="btn btn-sm btn-ghost" title="결과 기록만 초기화하고 원래 명단으로 복원">
+            🔄 명단 복원 및 다시 뽑기
+          </button>
+        </div>
+      </div>
+
+      <div id="historyListContainer" class="history-list-wrap">
+        <div class="empty-history-notice">
+          아직 뽑힌 학생이 없습니다. 오른쪽에서 뽑기를 시작해 보세요!
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- 간단 토스트 알림창 -->
+  <div id="toast" class="toast">메시지</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
