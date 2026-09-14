@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     soundToggleBtn: document.getElementById('soundToggleBtn'),
     soundIcon: document.getElementById('soundIcon'),
     fullscreenBtn: document.getElementById('fullscreenBtn'),
+    resetAllBtn: document.getElementById('resetAllBtn'),
     
     // 왼쪽 패널
     editModeBtn: document.getElementById('editModeBtn'),
@@ -679,6 +680,31 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('🔄 모든 학생이 대기 목록으로 복원되었습니다!');
     }
   });
+
+  // [완전 초기화] 버튼
+  if (elements.resetAllBtn) {
+    elements.resetAllBtn.addEventListener('click', () => {
+      initAudioContext();
+      if (confirm('등록된 학생 명단과 뽑기 기록을 모두 삭제하고 처음 상태로 완전 초기화하시겠습니까?')) {
+        state.initialList = [];
+        state.waitingList = [];
+        state.pickedList = [];
+        elements.nameInputArea.value = '';
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (e) {
+          console.warn('LocalStorage 삭제 실패:', e);
+        }
+        elements.rollerNames.innerHTML = '<span class="placeholder-text">🎲 아래 \'뽑기\' 버튼을 눌러주세요!</span>';
+        elements.winnerAnnouncement.classList.remove('show');
+        elements.displayBox.classList.remove('winner-highlight');
+        switchTab('edit');
+        updateUI();
+        playNoticeSound();
+        showToast('✨ 모든 명단과 기록이 완전 초기화되었습니다.');
+      }
+    });
+  }
 
   // ------------------------------------------------------------------------
   // 9. 초기화 실행
